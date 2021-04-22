@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/tarm/serial"
 	"log"
@@ -32,10 +33,18 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           0,
+	}))
+
 	r.GET("/name", func(c *gin.Context) {
 		conn := connectToScales()
+		defer conn.Close()
 		builtRequest := scales.BuildRequest([]byte{scales.Commands["CMD_GET_NAME"]})
-
 
 		_, err := conn.Write(builtRequest)
 		if err != nil {
@@ -50,8 +59,8 @@ func main() {
 
 	r.GET("/weight", func(c *gin.Context) {
 		conn := connectToScales()
+		defer conn.Close()
 		builtRequest := scales.BuildRequest([]byte{scales.Commands["CMD_GET_MASSA"]})
-
 
 		_, err := conn.Write(builtRequest)
 		if err != nil {

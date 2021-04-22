@@ -83,6 +83,7 @@ func (r *Response) Raw() RawResponse {
 type Connection interface {
 	Read([]byte) (int, error)
 	Write([]byte) (int, error)
+	Close() error
 }
 
 func (r *Response) Read(s Connection) error {
