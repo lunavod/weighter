@@ -75,5 +75,5 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", config.Server.IP, config.Server.Port)
 	log.Printf("Starting server at %s\n", addr)
-	r.Run(addr)
+	log.Fatal(r.Run(addr))
 }
