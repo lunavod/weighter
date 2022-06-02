@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/tarm/serial"
 	"log"
 	"net"
-	"weighter/scales"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/lunavod/weighter/scales"
+
+	"github.com/tarm/serial"
 )
 
 func connectToScales() scales.Connection {
@@ -28,52 +31,40 @@ func connectToScales() scales.Connection {
 	return conn
 }
 
+func getWeight() uint32 {
+	conn := connectToScales()
+	defer conn.Close()
+	builtRequest := scales.BuildRequest([]byte{scales.Commands["CMD_GET_MASSA"]})
+
+	_, err := conn.Write(builtRequest)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	resp, _ := scales.ReadGetMassaResponse(conn)
+	return resp.Weight
+}
+
+var ctx = context.Background()
+
 func main() {
 	config := GetConfig()
-
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           0,
-	}))
-
-	r.GET("/name", func(c *gin.Context) {
-		conn := connectToScales()
-		defer conn.Close()
-		builtRequest := scales.BuildRequest([]byte{scales.Commands["CMD_GET_NAME"]})
-
-		_, err := conn.Write(builtRequest)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		resp, _ := scales.ReadGetNameResponse(conn)
-		c.JSON(200, gin.H{
-			"result": resp,
-		})
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     config.Redis.Addr,
+		Password: config.Redis.Password,
+		DB:       config.Redis.Db,
 	})
 
-	r.GET("/weight", func(c *gin.Context) {
-		conn := connectToScales()
-		defer conn.Close()
-		builtRequest := scales.BuildRequest([]byte{scales.Commands["CMD_GET_MASSA"]})
+	fmt.Println("Connected. Sending weight every 3 seconds")
 
-		_, err := conn.Write(builtRequest)
+	x := 1
+	for {
+		weight := getWeight()
+		err := rdb.Set(ctx, "current_weight", int(weight)+x, 0).Err()
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
-
-		resp, _ := scales.ReadGetMassaResponse(conn)
-		c.JSON(200, gin.H{
-			"result": resp,
-		})
-	})
-
-	addr := fmt.Sprintf("%s:%d", config.Server.IP, config.Server.Port)
-	log.Printf("Starting server at %s\n", addr)
-	log.Fatal(r.Run(addr))
+		x++
+		time.Sleep(3 * time.Second)
+	}
 }

@@ -1,25 +1,27 @@
 package main
 
 import (
-	"github.com/pelletier/go-toml"
 	"io/ioutil"
+
+	"github.com/pelletier/go-toml"
 )
 
 type Scales struct {
-	IP string
-	Port int
-	COMPort string
+	IP             string
+	Port           int
+	COMPort        string
 	ConnectionType string
 }
 
-type Server struct {
-	IP string
-	Port int
+type Redis struct {
+	Addr     string
+	Password string
+	Db       int
 }
 
 type Config struct {
 	Scales Scales
-	Server Server
+	Redis  Redis
 }
 
 func GetConfig() Config {
@@ -45,10 +47,6 @@ func GetConfig() Config {
 
 	if config.Scales.COMPort == "" && config.Scales.IP == "" {
 		panic("Connection params not specified")
-	}
-
-	if config.Server.IP == "" || config.Server.Port == 0 {
-		panic("Server ip or port not specified")
 	}
 
 	return config

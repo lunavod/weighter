@@ -1,6 +1,8 @@
 package scales
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type GetMassaResponse struct {
 	Response

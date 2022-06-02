@@ -3,6 +3,7 @@ package scales
 import (
 	"encoding/binary"
 	"reflect"
+	"time"
 )
 
 var Commands = map[string]byte{
@@ -87,6 +88,7 @@ type Connection interface {
 }
 
 func (r *Response) Read(s Connection) error {
+	time.Sleep(3 * time.Millisecond)
 	buf := make([]byte, 128)
 	n, err := s.Read(buf)
 	if err != nil {
