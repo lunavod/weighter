@@ -57,14 +57,12 @@ func main() {
 
 	fmt.Println("Connected. Sending weight every 3 seconds")
 
-	x := 1
 	for {
 		weight := getWeight()
-		err := rdb.Set(ctx, "current_weight", int(weight)+x, 0).Err()
+		err := rdb.Set(ctx, "current_weight", weight, 0).Err()
 		if err != nil {
 			panic(err)
 		}
-		x++
 		time.Sleep(3 * time.Second)
 	}
 }
